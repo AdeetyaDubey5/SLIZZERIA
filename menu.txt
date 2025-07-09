@@ -1,0 +1,8 @@
+Burger 120
+Pizza 240
+Pasta 280
+Salad 300
+Coke 90
+Biryani 350
+Noodles 250
+

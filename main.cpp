@@ -6,35 +6,41 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
+#include <fstream>
+#include <termios.h>
+#include <unistd.h>
 using namespace std;
 
 bool isUsernameTaken(const string& username, const vector<string>& existingUsernames) {
     return find(existingUsernames.begin(), existingUsernames.end(), username) != existingUsernames.end();
 }
 
+string getHiddenInput() {
+    string password;
+    termios oldt, newt;
+
+    // Turn echoing off
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    getline(std::cin, password);
+
+    // Restore echoing
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    cout << std::endl;
+    return password;
+}
+
 int main() {
     Admin admin;
+    admin.loadMenuFromFile();
     Customer customer;
 
-    admin.addItem("Burger", 120);
-    admin.addItem("Pizza", 240);
-    admin.addItem("Pasta", 280);
-    admin.addItem("Salad", 300);
-    admin.addItem("Coke", 90);
-    admin.addItem("Biryani", 350);
-    admin.addItem("Noodles", 250);
-
- 
-
-    
-
-    int userType;
-    int adminChoice;
-    int customerChoice;
+    int userType, adminChoice, customerChoice;
 
     do {
-        
         cout << "\nUser Type Selection:\n";
         cout << "1. Administrator\n";
         cout << "2. Customer\n";
@@ -43,145 +49,139 @@ int main() {
         cin >> userType;
 
         switch (userType) {
-            case 1:
-                do {
-                                   // Admin login
-        string adminUsername = "admin";
-        string adminPassword = "12345";
-
-        string enteredAdminUsername;
-        string enteredAdminPassword;
-
-        cout << "Admin Login\n";
-        cout << "Username: ";
-        cin >> enteredAdminUsername;
-        cout << "Password: ";
-        cin >> enteredAdminPassword;
-
-        if (enteredAdminUsername == adminUsername && enteredAdminPassword == adminPassword) {
-             cout << "Login Successful! Welcome, Admin.\n";
-        } else {
-            cout << "Login Failed! Exiting program.\n";
-            return 0;
-    }
-                    cout << "\nAdmin Menu Dashboard:\n";
-                    cout << "1. Display Menu\n";
-                    cout << "2. Add Item\n";
-                    cout << "3. Delete Item\n";
-                    cout << "4. Update Item\n";
-                    cout << "5. Exit Admin Dashboard\n";
-                    cout << "Enter your choice: ";
-                    cin >> adminChoice;
-
-                    switch (adminChoice) {
-                        case 1:
-                            admin.displayMenu();
-                            break;
-                        case 2: {
-                            string name;
-                            double price;
-                            cout << "Enter the item name: ";
-                            cin >> name;
-                            cout << "Enter the item price: rs.";
-                            cin >> price;
-                            admin.addItem(name, price);
-                            break;
-                        }
-                        case 3: {
-                            string name;
-                            cout << "Enter item name to delete it: ";
-                            cin >> name;
-                            admin.deleteItem(name);
-                            break;
-                        }
-                        case 4: {
-                            string name;
-                            double price;
-                            cout << "Enter item name to update: ";
-                            cin >> name;
-                            cout << "Enter new price: rs";
-                            cin >> price;
-                            admin.updateItem(name, price);
-                            break;
-                        }
-                        case 5:
-                            cout << "Exiting admin dashboard. Goodbye!\n";
-                            break;
-                        default:
-                            cout << "Invalid choice. Please try again.\n";
+            case 1: {
+                // Admin login once
+                    string storedUsername, storedPassword;
+                    ifstream adminFile("admin.txt");
+                    if (adminFile) {
+                        adminFile >> storedUsername >> storedPassword;
+                        adminFile.close();
+                    } else {
+                        cout << "Error: admin.txt not found.\n";
+                        return 1;
                     }
-                } while (adminChoice != 5);
+
+                    string inputUsername, inputPassword;
+                    cout << "Admin Login\nUsername: ";
+                    cin >> inputUsername;
+                    cin.ignore();
+                    cout << "Password: ";
+                    inputPassword = getHiddenInput();
+
+
+                    if (inputUsername == storedUsername && inputPassword == storedPassword) {
+                        cout << "Login Successful! Welcome, Admin.\n";
+
+                        // Now show admin menu loop
+                        do {
+                            cout << "\nAdmin Menu Dashboard:\n";
+                            cout << "1. Display Menu\n";
+                            cout << "2. Add Item\n";
+                            cout << "3. Delete Item\n";
+                            cout << "4. Update Item\n";
+                            cout << "5. Exit Admin Dashboard\n";
+                            cout << "Enter your choice: ";
+                            cin >> adminChoice;
+
+                            switch (adminChoice) {
+                                case 1:
+                                    admin.displayMenu();
+                                    break;
+                                case 2: {
+                                    string name;
+                                    double price;
+                                    cout << "Enter item name: ";
+                                    cin >> name;
+                                    cout << "Enter item price: Rs.";
+                                    cin >> price;
+                                    admin.addItem(name, price);
+                                    break;
+                                }
+                                case 3: {
+                                    string name;
+                                    cout << "Enter item name to delete: ";
+                                    cin >> name;
+                                    admin.deleteItem(name);
+                                    break;
+                                }
+                                case 4: {
+                                    string name;
+                                    double price;
+                                    cout << "Enter item name to update: ";
+                                    cin >> name;
+                                    cout << "Enter new price: Rs.";
+                                    cin >> price;
+                                    admin.updateItem(name, price);
+                                    break;
+                                }
+                                case 5:
+                                    cout << "Exiting Admin Dashboard.\n";
+                                    break;
+                                default:
+                                    cout << "Invalid choice.\n";
+                            }
+                        } while (adminChoice != 5);
+                    } else {
+                        cout << "Login Failed! Invalid credentials.\n";
+                        return 0;
+                    }
                 break;
-
-            case 2:
-                do {
-                    // Customer login/signup
-    string customerUsername;
-    string customerPassword;
-
-    cout << "\nCustomer Login/Signup\n";
-    cout << "1. Login\n";
-    cout << "2. Signup\n";
-    cout << "Enter your choice: ";
-    int loginOrSignupChoice;
-    cin >> loginOrSignupChoice;
-
-    vector<string> existingCustomerUsernames; // Assuming a simple list of existing usernames
-    bool loginSuccessful = false;
-    switch (loginOrSignupChoice) {
-        case 1:
-        
-     
-
-    do {
-               vector<string> existingCustomerUsernames; // Assume this contains existing usernames
-    string customerUsername;
-    string customerPassword;
-
-    
-        cout << "Login\n";
-        cout << "Username: ";
-        cin >> customerUsername;
-        cout << "Password: ";
-        cin >> customerPassword;
-
-        // Check if the username exists and if the password is correct
-        if (isUsernameTaken(customerUsername, existingCustomerUsernames) && customer.checkPassword(customerPassword)) {
-            cout << "Login Successful! Welcome, " << customerUsername << ".\n";
-            loginSuccessful = true;
-        } else {
-            cout << "Login Failed! Invalid username or password. Please try again.\n";
-        }
-
-    } while (!loginSuccessful);
-
-            break;
-
-        case 2:
-            cout << "Signup\n";
-            cout << "Choose a username: ";
-            cin >> customerUsername;
-
-            // Check if the username is already taken
-            if (isUsernameTaken(customerUsername, existingCustomerUsernames)) {
-                cout << "Signup Failed! Username already taken. Exiting program.\n";
-                return 0;
             }
 
-            cout << "Choose a password: ";
-            cin >> customerPassword;
+            case 2: {
+                static vector<string> existingCustomerUsernames;
+                string customerUsername, customerPassword;
+                bool loginSuccessful = false;
+                
+                cout << "\nCustomer Login/Signup\n";
+                cout << "1. Login\n";
+                cout << "2. Signup\n";
+                cout << "Enter your choice: ";
+                int loginOrSignupChoice;
+                cin >> loginOrSignupChoice;
 
-            // Add the new username to the list of existing usernames
-            existingCustomerUsernames.push_back(customerUsername);
+                switch (loginOrSignupChoice) {
+                    case 1:
+                        do {
+                            cout << "Login\n";
+                            cout << "Username: ";
+                            cin >> customerUsername;
+                            cout << "Password: ";
+                            cin >> customerPassword;
 
-            cout << "Signup Successful! Welcome, " << customerUsername << ".\n";
-            break;
+                            if (isUsernameTaken(customerUsername, existingCustomerUsernames) &&
+                                customer.checkPassword(customerPassword)) {
+                                cout << "Login Successful! Welcome, " << customerUsername << ".\n";
+                                loginSuccessful = true;
+                            } else {
+                                cout << "Login Failed! Invalid username or password. Please try again.\n";
+                            }
+                        } while (!loginSuccessful);
+                        break;
 
-        default:
-            cout << "Invalid choice. Exiting program.\n";
-            return 0;
-    }
-    
+                    case 2:
+                        cout << "Signup\n";
+                        cout << "Choose a username: ";
+                        cin >> customerUsername;
+
+                        if (isUsernameTaken(customerUsername, existingCustomerUsernames)) {
+                            cout << "Signup Failed! Username already taken. Exiting program.\n";
+                            return 0;
+                        }
+
+                        cout << "Choose a password: ";
+                        cin >> customerPassword;
+
+                        existingCustomerUsernames.push_back(customerUsername);
+                        cout << "Signup Successful! Welcome, " << customerUsername << ".\n";
+                        break;
+
+                    default:
+                        cout << "Invalid choice. Exiting program.\n";
+                        return 0;
+                }
+
+                do {
                     cout << "\nCustomer Dashboard:\n";
                     cout << "1. View Menu\n";
                     cout << "2. Add to Orders\n";
@@ -198,15 +198,9 @@ int main() {
                             break;
                         case 2: {
                             string name;
-                            double price;
-
-                            
                             cout << "Enter the item name to add it to your orders: ";
                             cin >> name;
-
-                            
                             const MenuItem* itemToAdd = admin.findItemByName(name);
-
                             if (itemToAdd) {
                                 customer.addToOrder(*itemToAdd);
                             } else {
@@ -235,6 +229,7 @@ int main() {
                     }
                 } while (customerChoice != 6);
                 break;
+            }
 
             case 3:
                 cout << "Exiting program. Goodbye!\n";

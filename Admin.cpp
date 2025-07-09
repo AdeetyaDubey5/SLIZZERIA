@@ -1,15 +1,15 @@
 #include "Admin.h"
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
-void Admin::adminLogin() {
-    
-}
+void Admin::adminLogin() {}
 
 void Admin::addItem(string itemName, double itemPrice) {
     menu.push_back(MenuItem(itemName, itemPrice));
     cout << itemName << " added to the menu." << endl;
+    saveMenuToFile(); // NEW
 }
 
 void Admin::displayMenu() const {
@@ -18,7 +18,7 @@ void Admin::displayMenu() const {
     } else {
         cout << "Menu Items:" << endl;
         for (const MenuItem& item : menu) {
-            cout << item.name << " - rs." << item.price << endl;
+            cout << item.name << " - Rs." << item.price << endl;
         }
     }
 }
@@ -29,6 +29,7 @@ void Admin::deleteItem(const string& itemName) {
         if (it->name == itemName) {
             it = menu.erase(it);
             cout << itemName << " removed from the menu." << endl;
+            saveMenuToFile(); // Updated for menu
             return;
         } else {
             ++it;
@@ -41,7 +42,8 @@ void Admin::updateItem(const string& itemName, double newPrice) {
     for (MenuItem& item : menu) {
         if (item.name == itemName) {
             item.price = newPrice;
-            cout << "Price of " << itemName << " updated to rs." << newPrice << endl;
+            cout << "Price of " << itemName << " updated to Rs." << newPrice << endl;
+            saveMenuToFile(); // NEW
             return;
         }
     }
@@ -54,5 +56,23 @@ const MenuItem* Admin::findItemByName(const string& itemName) const {
             return &item;
         }
     }
-    return nullptr; 
+    return nullptr;
+}
+
+void Admin::loadMenuFromFile() {
+    ifstream file("menu.txt");
+    string name;
+    double price;
+    while (file >> name >> price) {
+        menu.push_back(MenuItem(name, price));
+    }
+    file.close();
+}
+
+void Admin::saveMenuToFile() const {
+    ofstream file("menu.txt");
+    for (const auto& item : menu) {
+        file << item.name << " " << item.price << endl;
+    }
+    file.close();
 }

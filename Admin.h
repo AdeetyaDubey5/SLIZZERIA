@@ -8,14 +8,16 @@
 class Admin {
 public:
     void adminLogin();
-    void addItem(string itemName, double itemPrice);
+    void addItem(std::string itemName, double itemPrice);
     void displayMenu() const;
-    void deleteItem(const string& itemName);
-    void updateItem(const string& itemName, double newPrice);
-    const MenuItem* findItemByName(const string& itemName) const;
+    void deleteItem(const std::string& itemName);
+    void updateItem(const std::string& itemName, double newPrice);
+    const MenuItem* findItemByName(const std::string& itemName) const;
+    void loadMenuFromFile();        // Updated Func
+    void saveMenuToFile() const;    // Updated func
 
 private:
-    std::list<MenuItem> menu; 
+    std::list<MenuItem> menu;
 };
 
 #endif // ADMIN_H
